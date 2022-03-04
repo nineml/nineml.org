@@ -71,6 +71,14 @@
             <p>A Saxon API for Invisible XML</p>
           </div>
         </div>
+        <div class="row">
+          <div style="text-align: center; width:100%">
+            Also available:
+            <a href="https://github.com/ndw/coffeepress">CoffeePress</a>,
+            an <a href="https://xproc.org/">XProc 3.0 step</a> for
+            <a href="https://github.com/ndw/xmlcalabash2">XML Calabash</a>.
+          </div>
+        </div>
       </div>
     </db:book>
   </xsl:document>
