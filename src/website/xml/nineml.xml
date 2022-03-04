@@ -46,8 +46,13 @@ processing Invisible XML documents from with XSLT or XQuery. Consult the
 for more information.
 </para>
 </listitem>
+<listitem>
+<para><link xlink:href="https://github.com/ndw/coffeepress">CoffeePress</link>
+is an <link xlink:href="https://xproc.org/">XProc 3.0</link> step for
+<link xlink:href="https://github.com/ndw/xmlcalabash2">XML Calabash</link>.
+</para>
+</listitem>
 </itemizedlist>
-
 </preface>
 
 <chapter xml:id="howto">
