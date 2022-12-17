@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><rss version="2.0"><channel><title>@nineml</title><link>https://nineml.org/@nineml/</link><description>NineML status feed.</description><language>en-us</language><pubDate>Sat, 17 Dec 2022 18:00:00 GMT</pubDate><lastBuildDate>Sat, 17 Dec 2022 18:18:24 GMT</lastBuildDate><managingEditor>ndw@nwalsh.com</managingEditor><webMaster>ndw@nwalsh.com</webMaster><item>
+   <title>CoffeePot 1.99.12 released</title>
+   <description>Supports iXML erratum E001.</description>
+   <pubDate>Sat, 17 Dec 2022 18:00:00 GMT</pubDate>
+   <link>https://github.com/nineml/coffeepot/releases/tag/1.99.12</link>
+   <guid>https://nineml.org/@nineml/2022/#pot-1-99-12</guid>
+</item><item>
+   <title>CoffeeFilter 1.99.13 released</title>
+   <description>Supports iXML erratum E001.</description>
+   <pubDate>Sat, 17 Dec 2022 17:20:00 GMT</pubDate>
+   <link>https://github.com/nineml/coffeefilter/releases/tag/1.99.13</link>
+   <guid>https://nineml.org/@nineml/2022/#filter-1-99-13</guid>
+</item></channel></rss>
