@@ -10,7 +10,7 @@ buildscript {
       force 'xml-apis:xml-apis:1.4.01',
         "${saxonGroup}:${saxonEdition}:${saxonVersion}",
         "org.xmlresolver:xmlresolver:${xmlresolverVersion}",
-        'com.nwalsh:sinclude:4.0.0-11'
+        'com.nwalsh:sinclude:4.2.1'
     }
   }
 
@@ -44,15 +44,29 @@ configurations.all {
     force 'xml-apis:xml-apis:1.4.01',
       "${saxonGroup}:${saxonEdition}:${saxonVersion}",
       "org.xmlresolver:xmlresolver:${xmlresolverVersion}",
-      'com.nwalsh:sinclude:4.0.0-11'
+      'com.nwalsh:sinclude:4.2.1'
   }
 }
 
 configurations {
   transform.extendsFrom documentation
+  saxonpath.extendsFrom implementation
+}
+
+// Set saxonLicenseDir in gradle.properties, or from the
+// command line if you have a license in some other place.
+if (!hasProperty("saxonLicenseDir")) {
+  ext.saxonLicenseDir=System.getenv('HOME') + "/java"
 }
 
 dependencies {
+  implementation (
+    [group: "com.saxonica", name: "Saxon-EE", version: "11.4"],
+    [group: "com.nwalsh", name: "scommonmark", version: "0.0.1"]
+  )
+  saxonpath (
+    files(saxonLicenseDir)
+  )
   documentation (
     [group: saxonGroup, name: saxonEdition, version: saxonVersion],
     [group: 'org.docbook', name: 'schemas-docbook', version: docbookVersion],
@@ -97,7 +111,7 @@ task manual_augment(type: SaxonXsltTask, dependsOn: ["manual_validate"]) {
   stylesheet "${projectDir}/tools/augment.xsl"
 }
 
-task website(type: SaxonXsltTask, dependsOn: ["manual_augment"]) {
+task website(type: SaxonXsltTask, dependsOn: ["manual_augment", "rss"]) {
   inputs.file "${projectDir}/tools/docbook.xsl"
   inputs.file "${projectDir}/website/docbook.xsl"
   outputs.files fileTree(dir: "${buildDir}/website")
@@ -199,6 +213,21 @@ task copyStaticResources() {
       into "${buildDir}/website/examples"
     }
   }
+}
+
+// ============================================================
+
+task rss(
+  type: JavaExec
+) {
+  inputs.files fileTree(dir: "${projectDir}/src/status",
+                        include: '20*/*')
+  inputs.file "${projectDir}/src/status/status-rss.xsl"
+  outputs.file "${projectDir}/build/website/@nineml/status.rss"
+  
+  classpath = configurations.saxonpath
+  mainClass = "com.saxonica.Transform"
+  args "-it", "-xsl:${projectDir}/src/status/status-rss.xsl"
 }
 
 // ======================================================================
