@@ -77,6 +77,10 @@
             <a href="https://github.com/ndw/coffeepress">CoffeePress</a>,
             an <a href="https://xproc.org/">XProc 3.0 step</a> for
             <a href="https://github.com/ndw/xmlcalabash2">XML Calabash</a>.
+            <br/>
+            Status updates:
+            <a href="/@nineml/">web</a>,
+            <a href="/@nineml/status.rss">RSS</a>.
           </div>
         </div>
       </div>

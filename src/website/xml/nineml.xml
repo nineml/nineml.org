@@ -18,10 +18,11 @@
 
 <itemizedlist>
 <listitem>
-<para>CoffeeGrinder is an implementation of an
-<link xlink:href="https://en.wikipedia.org/wiki/Earley_parser">Earley parser</link>.
-This parser forms the basis for the Invisible XML parser, but is limited to 
-Invisible XML grammars. The
+<para>CoffeeGrinder implements both an
+<link xlink:href="https://en.wikipedia.org/wiki/Earley_parser">Earley parser</link>
+and a GLL parser.
+This parser forms the basis for the Invisible XML parser, but is limited to
+simple grammars. The
 <link xlink:href="https://coffeegrinder.nineml.org/apidoc/">JavaDoc</link> describes
 the API.</para>
 </listitem>
