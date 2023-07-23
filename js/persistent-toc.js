@@ -1,4 +1,4 @@
-/* DocBook xslTNG version 1.6.0
+/* DocBook xslTNG version 2.1.6
  *
  * This is persistent-toc.js providing support for the ToC popup
  *
@@ -14,6 +14,8 @@
   let borderLeftColor = "white";
   let curpress = null;
   let searchListener = false;
+  let VERSION = "2.1.6";
+  let PTOCID = "ptoc-data-file";
 
   const showToC = function(event) {
     toc.style.width = "300px";
@@ -22,17 +24,81 @@
     toc.style["border-left"] = `1px solid ${borderLeftColor}`;
 
     // Make sure the tocPersist checkbox is created
-    tocPersistCheckbox();
+    tocPersistCheckbox(event && event.shiftKey);
 
     if (event) {
       event.preventDefault();
     }
 
+    // Do we need to load the ToC?
+    let div = toc.querySelector("div");
+    let prefix = div.getAttribute("db-prefix") || "";
+    if (div && div.getAttribute("db-persistent-toc")) {
+      let path = prefix + div.getAttribute("db-persistent-toc");
+      let uri = new URL(path, document.location).href;
+      fetch(uri)
+        .then((response) => {
+          if (response.status == 200) {
+            response.text()
+              .then(text => {
+                let doc = new DOMParser().parseFromString(text, "text/html");
+                let body = doc.querySelector("body");
+                div.innerHTML = body.innerHTML;
+                processToC(event);
+              })
+              .catch(err => {
+                // I don't think this error can actually occur with the string parser
+                // using the text/html mimeType. But just in case...
+                let href = `https://xsltng.docbook.org/guide/${VERSION}/ch-using.html#${PTOCID}`;
+                let resp = `Error: <a class="showlink" href='${href}'>persistent ToC</a>`;
+                div.innerHTML = `${resp} data could not be parsed.`;
+              });
+          } else {
+            let href = `https://xsltng.docbook.org/guide/${VERSION}/ch-using.html#${PTOCID}`;
+            let resp = `Error: <a class="showlink" href='${href}'>persistent ToC</a>`;
+            if (response.status == 404) {
+              div.innerHTML = `${resp} data file not found.`;
+            } else {
+              div.innerHTML = `${resp} could not read data file (status: ${response.status}).`;
+            }
+          }
+        })
+        .catch(err => {
+          let href = `https://xsltng.docbook.org/guide/${VERSION}/ch-using.html#${PTOCID}`;
+          let resp = `Error: <a class="showlink" href='${href}'>persistent ToC</a>`;
+          if (uri.startsWith("file:")) {
+            div.innerHTML = `${resp} is not accessible when the page is loaded using a <code>file:</code> URI.`;
+          } else {
+            div.innerHTML = `${resp} is not accessible: ${err}`;
+          }
+        });
+    } else {
+      processToC(event);
+    }
+  };
+
+  const processToC = function(event) {
+    let div = toc.querySelector("div");
+    if (div.hasAttribute("db-prefix")) {
+      patchToC(div, div.getAttribute("db-prefix"));
+      div.removeAttribute("db-prefix");
+      div.querySelectorAll("a").forEach(function (anchor) {
+        anchor.onclick = function(event) {
+          if (!tocPersist || !tocPersist.checked) {
+            hideToC();
+          }
+          patchLink(event, anchor);
+        };
+      });
+    }
+
     // Turn off any search markers that might have been set
     toc.querySelectorAll("li").forEach(function (li) {
-      const link = li.querySelector("a");
       li.style.display = "list-item";
-      link.classList.remove("found");
+      const link = li.querySelector("a");
+      if (link) {
+        link.classList.remove("found");
+      }
     });
 
     // Give the current click event a chance to settle?
@@ -57,45 +123,23 @@
         }
       };
 
-      let url = window.location.href;
-      let hash = "";
-      let pos = url.indexOf("#");
-      if (pos > 0) {
-        hash = url.substring(pos);
-        url = url.substring(0,pos);
+      let url = window.location.pathname;
+      let hash = window.location.hash;
+      if (window.location.search === "?toc") {
+        // Remove ?toc from the URI so that if it's bookmarked,
+        // the ToC reference isn't part of the bookmark.
+        window.history.replaceState({}, document.title,
+                                    window.location.origin
+                                    + window.location.pathname
+                                    + window.location.hash);
       }
-      
-      pos = url.indexOf("?");
-      if (pos >= 0) {
-        tocPersistCheckbox();
-        if (tocPersist) {
-          tocPersist.checked = true;
-        }
-        url = url.substring(0, pos);
-      }
-      url = url + hash;
 
-      // Remove ?toc from the URI so that if it's bookmarked,
-      // the ToC reference isn't part of the bookmark.
-      window.history.replaceState({}, document.title, url);
-
-      pos = url.lastIndexOf("/");
-      url = url.substring(pos+1);
-      let target = document.querySelector("nav.toc div a[href='"+url+"']");
+      let path = window.location.pathname.substring(1) + window.location.hash;
+      let target = document.querySelector("nav.toc div a[rel-path='"+path+"']");
       if (target) {
         target.scrollIntoView();
       } else {
-        // Maybe it's just a link in this page?
-        pos = url.indexOf("#");
-        if (pos > 0) {
-          let hash = url.substring(pos);
-          target = document.querySelector("nav.toc div a[href='"+hash+"']");
-          if (target) {
-            target.scrollIntoView();
-          } else {
-            console.log(`No target: ${url} (or ${hash})`);
-          }
-        }
+        console.log(`ToC scroll, no match: ${path}`);
       }
 
       if (!searchListener) {
@@ -105,6 +149,22 @@
     }, 400);
 
     return false;
+  };
+
+  const patchToC = function(elem, prefix) {
+    // Injecting HTML is a little risky; try to mitigate that.
+    // There should never *be* a script in there so...
+    elem.querySelectorAll("script").forEach(script => {
+      script.innerHTML = "";
+      script.setAttribute("src", "");
+    });
+
+    elem.querySelectorAll("a").forEach(anchor => {
+      anchor.setAttribute("rel-path", anchor.getAttribute("href"));
+      anchor.setAttribute("href", prefix + anchor.getAttribute("href"));
+    });
+
+    return elem;
   };
 
   const hideToC = function(event) {
@@ -133,7 +193,7 @@
     return false;
   };
 
-  const tocPersistCheckbox = function() {
+  const tocPersistCheckbox = function(persist) {
     if (tocPersist != null) {
       return;
     }
@@ -146,7 +206,7 @@
       pcheck.classList.add("persist");
       pcheck.setAttribute("type", "checkbox");
       pcheck.setAttribute("title", "Keep ToC open when following links");
-      pcheck.checked = (window.location.href.indexOf("?toc") >= 0);
+      pcheck.checked = persist || (window.location.search === "?toc");
       ptoc.appendChild(pcheck);
     }
 
@@ -206,14 +266,18 @@
         const link = li.querySelector("a");
         if (restr === "") {
           li.style.display = "list-item";
-          link.classList.remove("found");
+          if (link) {
+            link.classList.remove("found");
+          }
         } else {
           if (li.textContent.toLowerCase().match(regex)) {
             li.style.display = "list-item";
-            if (link.textContent.toLowerCase().match(regex)) {
-              link.classList.add("found");
-            } else {
-              link.classList.remove("found");
+            if (link) {
+              if (link.textContent.toLowerCase().match(regex)) {
+                link.classList.add("found");
+              } else {
+                link.classList.remove("found");
+              }
             }
           } else {
             li.style.display = "none";
@@ -241,30 +305,11 @@
   toc.innerHTML = tocScript.innerHTML;
 
   tocOpen.style.display = "inline";
+  tocOpen.style.zIndex = 3;
 
-  document.querySelectorAll("nav.toc div a").forEach(function (anchor) {
-    anchor.onclick = function(event) {
-      if (!tocPersist || !tocPersist.checked) {
-        hideToC();
-      }
-      patchLink(event, anchor);
-    };
-  });
+  toc.style.zIndex = 4;
 
-  let tocJump = false;
-  let pos = window.location.href.indexOf("?");
-  if (pos >= 0) { // How could it be zero?
-    let query = window.location.href.substring(pos+1);
-    pos = query.indexOf("#");
-    if (pos >= 0) {
-      query = query.substring(0, pos);
-    }
-    query.split("&").forEach(function(item) {
-      tocJump = tocJump || (item === "toc" || item === "toc=1" || item === "toc=true");
-    });
-  }
-
-  if (tocJump) {
+  if (window.location.search === "?toc") {
     showToC(null);
   } else {
     // If we're not going to jump immediately to the ToC,
